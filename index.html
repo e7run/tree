@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>벌목의 달인</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap');
+
+  :root{
+    --pine-deep:#1c2b1a;
+    --pine-mid:#2c3e26;
+    --bark:#5b3f2c;
+    --bark-dark:#3d2a1c;
+    --amber:#c9812f;
+    --amber-bright:#e8a84c;
+    --moss:#7d9a5c;
+    --parchment:#efe6d3;
+    --parchment-dim:#d9cdae;
+    --blood:#a9432f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Gowun Dodum', sans-serif;
+    background:
+      radial-gradient(ellipse at top, #24371f 0%, var(--pine-deep) 55%, #0f1810 100%);
+    color:var(--parchment);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  h1,h2,h3{font-family:'Black Han Sans', sans-serif; letter-spacing:1px; margin:0;}
+
+  #app{max-width:720px;margin:0 auto;padding:10px 10px 40px;}
+
+  /* ================= 모달 (로그인/퀴즈) ================= */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); display: none; z-index: 100;
+    align-items: center; justify-content: center; backdrop-filter: blur(3px);
+  }
+  .modal-box {
+    background: var(--pine-mid); border: 2px solid var(--amber-bright);
+    padding: 24px; border-radius: 16px; text-align: center; color: var(--parchment); width: 280px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+  }
+  .modal-box h3 { color: var(--amber-bright); margin-bottom: 15px; font-family:'Black Han Sans'; font-size:22px;}
+  .modal-box input {
+    font-size: 18px; padding: 10px; width: 100%; text-align: center; font-weight: bold; font-family:'Gowun Dodum';
+    margin: 15px 0 20px; background: var(--pine-deep); color: #fff;
+    border: 2px solid var(--moss); outline: none; border-radius: 8px;
+  }
+  .modal-box button {
+    padding: 10px 20px; margin: 0 4px; border: none; border-radius: 8px;
+    font-weight: bold; cursor: pointer; font-size: 14px;
+  }
+  .btn-confirm { background: var(--amber-bright); color: #111; }
+  .btn-cancel { background: #4a4a44; color: #fff; }
+
+  #quizAnswer { font-size: 24px; width:120px; }
+
+  /* ================= 상단 애니메이션 스테이지 ================= */
+  #stage{
+    position:relative;border-radius:16px;overflow:hidden;margin-bottom:10px;
+    border:2px solid #6b4a30;box-shadow:0 6px 0 #241811;
+    background:#1c2b1a;
+  }
+  #stageSvg{display:block;width:100%;height:auto;cursor:pointer;}
+
+  #stageTopRow{
+    position:absolute;top:8px;left:8px;right:8px;
+    display:flex;justify-content:space-between;align-items:flex-start;
+    pointer-events:none;
+  }
+  #stageOverlay{
+    display:flex;align-items:center;gap:6px;
+    background:rgba(20,14,8,.6);backdrop-filter:blur(2px);
+    padding:5px 10px 5px 6px;border-radius:20px;border:1px solid rgba(255,255,255,.12);
+  }
+  #stageOverlay .grade{font-size:9px;padding:2px 6px;border-radius:8px;font-weight:bold;color:#111;position:static;}
+  #stageOverlay #stageTreeName{font-size:12px;font-weight:bold;color:var(--parchment);}
+  
+  #stageBadges{display:flex;flex-direction:column;align-items:flex-end;gap:4px; pointer-events:auto;}
+  .stage-pill{
+    font-size:9px;padding:4px 9px;border-radius:20px;white-space:nowrap;
+    background:rgba(20,14,8,.6);border:1px solid rgba(255,255,255,.12);color:var(--parchment-dim);
+  }
+  #titleBadge.stage-pill{color:var(--amber-bright);border-color:var(--moss);}
+  #stagePhaseTag.ready{color:#241811;background:var(--amber-bright);border-color:var(--amber-bright);font-weight:bold;}
+  #callSpiritBtn{cursor:pointer; border-color:var(--moss); font-weight:bold; transition: background 0.3s;}
+  #callSpiritBtn:hover{background:rgba(255,255,255,0.1);}
+
+  /* 애니메이션 창 우측 하단 저장 버튼 */
+  .stage-save-btn {
+    position: absolute; bottom: 56px; right: 8px; z-index: 10;
+    background: rgba(20, 14, 8, 0.7); border: 1px solid var(--amber-bright);
+    color: var(--amber-bright); padding: 5px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: bold; cursor: pointer; backdrop-filter: blur(2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4); font-family: 'Gowun Dodum', sans-serif;
+  }
+  .stage-save-btn:active { transform: scale(0.95); }
+
+  #stageHud{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+    background:rgba(15,10,6,.72);padding:8px 8px;border-top:1px solid rgba(255,255,255,.08);
+  }
+  .hud-item{text-align:center;min-width:0;}
+  .hud-label{font-size:9px;color:var(--moss);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hud-val{font-size:13px;font-weight:bold;color:var(--parchment);}
+  .hud-val.gold{color:var(--amber-bright);}
+  .bar-wrap{background:rgba(0,0,0,.35);border-radius:6px;overflow:hidden;height:8px;margin-top:6px;border:1px solid rgba(0,0,0,.4);}
+  .bar-wrap.mini{height:5px;margin-top:3px;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--moss),#a8c97e);transition:width .2s;}
+  .bar-fill.dura{background:linear-gradient(90deg,#7a8fb0,#a9c1e0);}
+  .bar-fill.chop{background:linear-gradient(90deg,var(--amber),var(--amber-bright));}
+
+  /* 나무 그룹 / 캐릭터 애니메이션 등 */
+  #treeWrap{transform-origin:280px 172px;}
+  #treeWrap.pop{animation:popBounce .3s ease-out;}
+  @keyframes popBounce{ 0%{transform:scale(.85);} 55%{transform:scale(1.12);} 100%{transform:scale(1);} }
+  #treeGroup{transform-origin:280px 172px;}
+  #treeGroup.tree-shake{animation:treeShake .18s;}
+  @keyframes treeShake{ 0%,100%{transform:rotate(0deg);} 25%{transform:rotate(-3deg);} 75%{transform:rotate(3deg);} }
+  #treeGroup.falling{animation:treeFall .6s ease-in forwards;}
+  @keyframes treeFall{
+    0%{transform:scale(1) rotate(0deg);opacity:1;}
+    65%{transform:scale(1) rotate(78deg);opacity:1;}
+    100%{transform:scale(1) rotate(80deg) translate(26px,4px);opacity:0;}
+  }
+  .canopy{stroke:#16210f;stroke-width:2;stroke-linejoin:round;transition:fill .2s;}
+  #treeGroup.tree-ready .canopy{filter:drop-shadow(0 0 5px rgba(232,168,76,.55));}
+  
+  #mountainSpirit { transition: transform 1.2s cubic-bezier(0.2, 1.2, 0.5, 1), opacity 0.8s ease; transform-origin: 60px 180px; transform: translateY(60px) scale(0.6); opacity: 0; }
+  #mountainSpirit.active { transform: translateY(0px) scale(1); opacity: 1; }
+  .spirit-glow { animation: spiritPulse 2s infinite alternate; }
+  @keyframes spiritPulse { 0% { filter: drop-shadow(0 0 5px rgba(107, 203, 255, 0.5)); } 100% { filter: drop-shadow(0 0 18px rgba(255, 252, 153, 0.9)); } }
+
+  #lumberjack{animation:idleBob 2.2s ease-in-out infinite;transform-origin:170px 172px;}
+  @keyframes idleBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-2.5px);} }
+  #frontArm{transform-origin:180px 102px;transform:rotate(-12deg);}
+  #frontArm.swing{animation:swingArm .32s cubic-bezier(.3,0,.4,1);}
+  @keyframes swingArm{ 0%{transform:rotate(-12deg);} 45%{transform:rotate(78deg);} 100%{transform:rotate(-12deg);} }
+  .chip{animation:chipFly .5s ease-out forwards;}
+  @keyframes chipFly{ 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) rotate(220deg);opacity:0;} }
+
+  /* ---------- Tabs ---------- */
+  #tabs-wrapper { overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
+  #tabs{display:flex;gap:4px; min-width: max-content;}
+  .tab-btn{
+    padding:9px 12px;text-align:center;font-size:11px;border-radius:8px;
+    background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);
+    color:var(--parchment-dim);cursor:pointer; white-space:nowrap;
+  }
+  .tab-btn.active{background:var(--amber);color:#241811;font-weight:bold;border-color:var(--amber-bright);}
+
+  .panel{display:none;background:rgba(0,0,0,.25);border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.08);max-height:56vh;overflow-y:auto;}
+  .panel.active{display:block;}
+
+  .shop-sub-label{font-size:11px;color:var(--moss);margin:2px 2px 6px;font-weight:bold;letter-spacing:.5px;}
+
+  /* ---------- Forest grid (나무 슬롯 탭) ---------- */
+  .forest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .slot{
+    position:relative;aspect-ratio:1/1;border-radius:14px;
+    background:radial-gradient(circle at 50% 30%, #3a4f2f 0%, #223019 70%);
+    border:2px solid #33461f; display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;overflow:hidden;transition:transform .08s, border-color .15s, box-shadow .15s;
+  }
+  .slot:active{transform:scale(.95);}
+  .slot.active-slot{border-color:var(--amber-bright);box-shadow:0 0 0 2px rgba(232,168,76,.35);}
+  .slot .tree-emoji{font-size:36px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.5));}
+  .slot .tree-name{font-size:10px;margin-top:3px;font-weight:bold;}
+  .slot .grade{ position:absolute;top:5px;left:5px;font-size:9px;padding:2px 6px;border-radius:8px; font-weight:bold;color:#111; }
+  .grade-C{background:#b8bcae;} .grade-B{background:#7fbf6b;} .grade-A{background:#6ba8e0;}
+  .grade-S{background:#c589e8;} .grade-SS{background:#ffc94d;} .grade-SSS{background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcBff);}
+  
+  .slot.growing .tree-emoji{opacity:.35;}
+  .slot .growbar, .slot .chopbar{position:absolute;bottom:6px;left:8px;right:8px;}
+  .slot .hit-fx{
+    position:absolute;font-size:16px;pointer-events:none; font-weight:bold; text-shadow:0 2px 2px #000;
+    animation:fxpop .6s ease-out forwards; z-index:10; white-space:nowrap;
+  }
+  @keyframes fxpop{ 0%{opacity:1;transform:translateY(0) scale(1);} 100%{opacity:0;transform:translateY(-35px) scale(1.3);} }
+  .slot.shake{animation:shake .12s;}
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px) rotate(-2deg);} 75%{transform:translateX(4px) rotate(2deg);} }
+
+  .row-item{ display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.06); }
+  .row-item:last-child{border-bottom:none;}
+  .row-item .ic{font-size:20px;width:26px;text-align:center;}
+  .row-item .nm{flex:1;font-size:13px;}
+  .row-item .nm .sm{display:block;font-size:10px;color:var(--parchment-dim);}
+  .row-item .ct{font-size:13px;color:var(--amber-bright);font-weight:bold;min-width:44px;text-align:right;}
+  
+  .buy-btn, .sell-btn { border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  .buy-btn{background:var(--moss);color:#12200c;}
+  .sell-btn{background:var(--amber);color:#241811;}
+  .buy-btn:disabled, .sell-btn:disabled{background:#4a4a44;color:#8a8a80;cursor:not-allowed;}
+  .sell-all-btn { width: 100%; padding: 12px; margin-bottom: 12px; background: #e8a84c; color: #111; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 0 #c9812f; transition: transform 0.1s, box-shadow 0.1s; }
+  .sell-all-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #c9812f; }
+
+  .ach-item{opacity:.4;} .ach-item.done{opacity:1;} .ach-item .ic{color:var(--amber-bright);} .ach-item.done .ic::after{content:" ✓";color:#8bd66b;}
+
+  /* 랭킹 탭 스타일 */
+  .rank-list { list-style:none; padding:0; margin:0; }
+  .rank-list li { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,.05); font-size:13px; }
+  .rank-list li:nth-child(1) { font-weight:bold; color:var(--amber-bright); font-size:15px; }
+  .rank-list li:nth-child(2) { color:#c0d1e3; }
+  .rank-list li:nth-child(3) { color:#cd8e53; }
+  .rank-num { width: 24px; font-weight:bold; }
+  .rank-name { flex:1; text-align:left; }
+  .rank-stat { text-align:right; font-size:11px; color:var(--parchment-dim); }
+
+  #toast-wrap{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center;}
+  .toast{
+    background:var(--bark-dark);border:1px solid var(--amber);color:var(--parchment);
+    padding:8px 16px;border-radius:20px;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,.5);
+    animation:toastin .25s ease-out, toastout .4s ease-in 2.2s forwards;
+  }
+  @keyframes toastin{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes toastout{to{opacity:0;transform:translateY(-8px);}}
+
+  footer{text-align:center;font-size:9px;color:var(--parchment-dim);margin-top:10px;opacity:.55;}
+</style>
+</head>
+<body>
+
+<!-- 로그인 모달 -->
+<div id="loginModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>벌목의 달인</h3>
+    <p style="font-size:13px; color:#d9cdae; margin-bottom:5px;">게임에 사용할 닉네임을 입력해주세요.</p>
+    <input type="text" id="nicknameInput" placeholder="닉네임 (2~8자)" maxlength="8">
+    <br>
+    <button class="btn-confirm" onclick="login()">시작하기</button>
+  </div>
+</div>
+
+<!-- 산신령 퀴즈 모달 -->
+<div id="quizModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>산신령의 시험</h3>
+    <p style="font-size:13px; color:#d9cdae; margin-bottom:5px;">문제를 풀면 1분간 나무 2배 성장 및<br>자동 벌목/판매의 가호가 내려집니다.</p>
+    <div id="quizQuestion" style="font-size:24px; font-weight:bold; margin-top:10px;">? + ? = ?</div>
+    <input type="number" id="quizAnswer" placeholder="정답">
+    <br>
+    <button class="btn-confirm" onclick="checkQuiz()">확인</button>
+    <button class="btn-cancel" onclick="closeQuiz()">취소</button>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+<div id="app">
+
+  <!-- ================= 상단: 애니메이션 스테이지 ================= -->
+  <div id="stage">
+    <svg id="stageSvg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3d5734"/>
+          <stop offset="100%" stop-color="#1c2b1a"/>
+        </linearGradient>
+        <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3d5230"/>
+          <stop offset="100%" stop-color="#171f10"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="400" height="200" fill="url(#skyGrad)"/>
+      <path d="M0,150 Q60,122 120,142 T240,136 T400,146 V200 H0 Z" fill="#24371f"/>
+      <path d="M0,164 Q80,140 160,160 T400,156 V200 H0 Z" fill="#1a2814"/>
+      
+      <!-- 산신령 연못 & 산신령 -->
+      <ellipse cx="60" cy="178" rx="45" ry="12" fill="#2b5966" opacity="0.8"/>
+      <ellipse cx="60" cy="178" rx="35" ry="8" fill="#3c7c8f" opacity="0.9"/>
+      <g id="mountainSpirit">
+        <g class="spirit-glow">
+          <path d="M40,180 Q60,120 80,180 Z" fill="#e2f5ec"/>
+          <circle cx="60" cy="135" r="14" fill="#ffe0bd"/>
+          <path d="M48,140 Q60,170 72,140 Z" fill="#ffffff"/>
+          <path d="M45,125 L75,125 L65,100 L55,100 Z" fill="#1a1a1a"/>
+          <rect x="75" y="120" width="3" height="60" fill="#5b3f2c"/>
+          <circle cx="76.5" cy="118" r="5" fill="#ffc94d"/>
+        </g>
+      </g>
+
+      <rect x="0" y="172" width="400" height="28" fill="url(#groundGrad)"/>
+      <ellipse cx="280" cy="176" rx="52" ry="7" fill="#000" opacity=".28"/>
+      <ellipse cx="170" cy="174" rx="28" ry="5" fill="#000" opacity=".28"/>
+
+      <g id="treeWrap">
+        <g id="treeGroup">
+          <rect x="272" y="110" width="16" height="62" fill="#5b3f2c" stroke="#3d2a1c" stroke-width="2"/>
+          <rect id="chopNotch" x="270" y="145" width="4" height="16" fill="#241811"/>
+          <polygon class="canopy" points="240,118 320,118 280,70" fill="#7fbf6b"/>
+          <polygon class="canopy" points="248,90 312,90 280,48" fill="#7fbf6b"/>
+          <polygon class="canopy" points="256,64 304,64 280,26" fill="#7fbf6b"/>
+        </g>
+      </g>
+
+      <g id="lumberjack">
+        <rect x="145" y="140" width="10" height="26" fill="#3d2a1c"/>
+        <rect x="161" y="140" width="10" height="26" fill="#2e2015"/>
+        <rect x="143" y="164" width="14" height="6" rx="2" fill="#241811"/>
+        <rect x="159" y="164" width="14" height="6" rx="2" fill="#241811"/>
+        <rect x="131" y="102" width="10" height="28" rx="4" fill="#e8b98a"/>
+        <rect x="140" y="98" width="40" height="38" rx="7" fill="#5b3f2c"/>
+        <rect x="140" y="128" width="40" height="6" fill="#c9812f"/>
+        <rect x="167" y="90" width="10" height="10" fill="#e8b98a"/>
+        <circle cx="172" cy="80" r="16" fill="#e8b98a"/>
+        <path d="M161,89 Q172,100 183,89 L181,93 Q172,98 163,93 Z" fill="#3d2a1c"/>
+        <circle cx="166" cy="78" r="1.6" fill="#241811"/>
+        <circle cx="177" cy="78" r="1.6" fill="#241811"/>
+        <path d="M155,73 Q172,53 189,73 Z" fill="#e8a84c"/>
+        <rect x="153" y="70" width="38" height="6" rx="3" fill="#c9812f"/>
+        <g id="frontArm">
+          <rect x="176" y="102" width="10" height="24" rx="4" fill="#e8b98a"/>
+          <circle cx="181" cy="127" r="6" fill="#e8b98a"/>
+          <g transform="translate(168,72) rotate(-18)">
+            <rect x="-3" y="-4" width="6" height="56" rx="2" fill="#5b3f2c"/>
+            <polygon points="-3,-4 20,-9 23,10 -1,12" fill="#d7dadd" stroke="#333029" stroke-width="1.5"/>
+          </g>
+        </g>
+      </g>
+      <g id="fxLayer"></g>
+    </svg>
+
+    <!-- 💡 애니메이션 화면 오른쪽 아래 서버 저장 버튼 -->
+    <button class="stage-save-btn" onclick="saveRecordToServer()">💾 기록 저장</button>
+
+    <div id="stageTopRow">
+      <div id="stageOverlay">
+        <span id="stageGrade" class="grade grade-C">C</span>
+        <span id="stageTreeName">소나무</span>
+      </div>
+      <div id="stageBadges">
+        <button id="callSpiritBtn" class="stage-pill" onclick="openQuiz()">🙏 산신령 호출</button>
+        <span id="titleBadge" class="stage-pill">칭호 없음</span>
+        <span id="stagePhaseTag" class="stage-pill">자라는 중</span>
+      </div>
+    </div>
+
+    <div id="stageHud">
+      <div class="hud-item">
+        <div class="hud-label">골드</div>
+        <div class="hud-val gold" id="goldVal">0Ə</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label"><span id="playerName">유저</span> Lv <span id="lvVal">1</span></div>
+        <div class="bar-wrap mini"><div class="bar-fill" id="expBar" style="width:0%"></div></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">총 벌목</div>
+        <div class="hud-val" id="totalChopVal">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label" id="axeName">나무 도끼</div>
+        <div class="bar-wrap mini"><div class="bar-fill dura" id="axeDuraBar" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 하단: 탭 ================= -->
+  <div id="tabs-wrapper">
+    <div id="tabs">
+      <div class="tab-btn active" data-panel="slotsPanel">나무 슬롯</div>
+      <div class="tab-btn" data-panel="axePanel">도끼 구매</div>
+      <div class="tab-btn" data-panel="sellPanel">나무 판매</div>
+      <div class="tab-btn" data-panel="jobsPanel">전직</div>
+      <div class="tab-btn" data-panel="achPanel">업적</div>
+      <div class="tab-btn" data-panel="rankPanel" onclick="loadRanking()">🏆 랭킹</div>
+    </div>
+  </div>
+
+  <div class="panel active" id="slotsPanel"></div>
+  <div class="panel" id="axePanel"></div>
+  <div class="panel" id="sellPanel"></div>
+  <div class="panel" id="jobsPanel"></div>
+  <div class="panel" id="achPanel"></div>
+  
+  <div class="panel" id="rankPanel">
+    <div class="shop-sub-label">🏆 명예의 전당 (Top 30)</div>
+    <ul id="rankList" class="rank-list">
+      <li style="text-align:center; color:#888;">랭킹을 불러오는 중입니다...</li>
+    </ul>
+  </div>
+
+  <footer>플레이 시간 <span id="playtime">0분</span></footer>
+</div>
+
+<script>
+/* ================= 앱스 스크립트 API URL ================= */
+// ★여기에 구글 앱스 스크립트 배포 후 얻은 웹 앱 URL을 붙여넣으세요.
+const API_URL = 'AKfycbwO5frEeg9RuT-VHoQGVJ5rHVjhXAH0qQiHOsuQEA_OWkgdjOhJyJ9Nwy_y9KKcLCUhbg';
+
+/* ============ 데이터 ============ */
+const TREES = [
+  {id:'pine',   name:'소나무',   grade:'C', weight:20, grow:6.0, chop:3.0, price:10, dura:10, exp:10, emoji:'🌲'},
+  {id:'oak2',   name:'떡갈나무', grade:'C', weight:15, grow:6.5, chop:3.5, price:15, dura:15, exp:10, emoji:'🌳'},
+  {id:'willow', name:'버드나무', grade:'C', weight:10, grow:5.5, chop:2.8, price:20, dura:15, exp:10, emoji:'🌿'},
+  {id:'maple',  name:'단풍나무', grade:'C', weight:10, grow:7.0, chop:4.0, price:25, dura:20, exp:20, emoji:'🍁'},
+  {id:'birch',  name:'자작나무', grade:'B', weight:8,  grow:7.5, chop:4.5, price:30, dura:20, exp:20, emoji:'🌳'},
+  {id:'bamboo', name:'대나무',   grade:'B', weight:4,  grow:3.0, chop:2.5, price:20, dura:10, exp:10, emoji:'🎋'},
+  {id:'magic',  name:'마법나무', grade:'S', weight:3,  grow:10.0,chop:5.5, price:70, dura:35, exp:40, emoji:'🔮'},
+  {id:'life',   name:'생명의 나무', grade:'SS', weight:2, grow:12.0,chop:7.5, price:80, dura:100, exp:50, emoji:'🌈'},
+];
+const TOTAL_W = TREES.reduce((a,t)=>a+t.weight,0);
+
+const AXES = [
+  {id:'wood',   name:'나무 도끼', mult:1.0, dura:100, cost:100},
+  {id:'stone',  name:'돌 도끼',   mult:1.1, dura:150, cost:200},
+  {id:'iron',   name:'철 도끼',   mult:1.3, dura:200, cost:350},
+];
+
+const JOBS = [
+  {id:'lumberjack', name:'벌목꾼', desc:'벌목 시 30% 확률로 1개 추가 획득'},
+  {id:'smith',       name:'대장장이', desc:'도끼 구매 시 내구도 100 증가'},
+];
+
+const ACHIEVEMENTS = [
+  {id:'a1', name:'초심자', desc:'나무 1회 벌목', check:s=>s.totalChop>=1},
+  {id:'a2', name:'중급자', desc:'나무 100회 벌목', check:s=>s.totalChop>=100},
+  {id:'a19',name:'애너지 폭발', desc:'레벨 50 달성', check:s=>s.level>=50},
+];
+
+/* ============ 상태 및 로그인 ============ */
+let state = {
+  nickname: '',
+  gold: 50, level: 1, exp: 0, totalChop: 0, rareChop: 0, nightChop: 0, playSeconds: 0,
+  job: null, axeId: 'wood', axeDura: 100, axeMaxDura: 100, ownedAxes: {wood:true},
+  woodInv: {}, woodChopped: {}, achDone: {}, activeSlot: 0,
+  slots: [null,null,null,null,null,null], spiritTimeLeft: 0,
+};
+
+let uiDirty = true;
+let quizExpectedAns = 0;
+let isSaving = false;
+
+// 게임 시작 시 동작
+window.onload = () => {
+  const savedName = localStorage.getItem('lumberjack_nickname');
+  if (savedName) {
+    state.nickname = savedName;
+    document.getElementById('playerName').textContent = state.nickname;
+    loadRanking(); // 앱 로드 시 랭킹 불러오기
+  } else {
+    document.getElementById('loginModal').style.display = 'flex';
+  }
+};
+
+function login() {
+  const name = document.getElementById('nicknameInput').value.trim();
+  if (name.length < 2) {
+    toast('닉네임을 2자 이상 입력해주세요.'); return;
+  }
+  state.nickname = name;
+  localStorage.setItem('lumberjack_nickname', name);
+  document.getElementById('playerName').textContent = name;
+  document.getElementById('loginModal').style.display = 'none';
+  toast(`환영합니다, ${name}님!`);
+  
+  // 닉네임 생성 즉시 저장 (서버 데이터베이스 등록)
+  saveRecordToServer();
+}
+
+/* ============ 랭킹 서버 연동 ============ */
+function saveRecordToServer() {
+  if (isSaving) return;
+  if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') {
+    toast('API_URL이 설정되지 않았습니다. 코드를 확인해주세요.'); return;
+  }
+  
+  isSaving = true;
+  toast('서버에 기록을 저장하는 중...');
+  
+  const payload = {
+    nickname: state.nickname,
+    level: state.level,
+    totalChop: state.totalChop,
+    gold: state.gold
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    // 구글 앱스 스크립트의 CORS 우회를 위해 헤더를 text/plain 으로 지정
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.text()) // GAS 응답이 완벽한 JSON이 아닐 경우를 대비해 text로 수신
+  .then(text => {
+    toast('성공적으로 저장되었습니다!');
+    loadRanking(); // 저장 후 랭킹 정보 갱신
+  })
+  .catch(err => {
+    console.error(err);
+    toast('저장에 실패했습니다.');
+  })
+  .finally(() => {
+    isSaving = false;
+  });
+}
+
+function loadRanking() {
+  if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') return;
+  
+  const listEl = document.getElementById('rankList');
+  listEl.innerHTML = '<li style="text-align:center; color:#888;">데이터를 불러오는 중...</li>';
+  
+  fetch(API_URL)
+  .then(res => res.json())
+  .then(data => {
+    listEl.innerHTML = '';
+    if (data.length === 0) {
+      listEl.innerHTML = '<li style="text-align:center; color:#888;">등록된 랭킹이 없습니다.</li>';
+      return;
+    }
+    data.forEach((user, index) => {
+      listEl.innerHTML += `
+        <li>
+          <div class="rank-num">${index + 1}</div>
+          <div class="rank-name">${user.nickname}</div>
+          <div class="rank-stat">Lv.${user.level} | 🪵 ${user.totalChop} | 💰 ${user.gold}</div>
+        </li>
+      `;
+    });
+  })
+  .catch(err => {
+    listEl.innerHTML = '<li style="text-align:center; color:#a9432f;">랭킹을 불러오지 못했습니다.</li>';
+  });
+}
+
+/* ============ 유틸리티 ============ */
+function pickTree(){ let r = Math.random()*TOTAL_W; for(const t of TREES){ r-=t.weight; if(r<=0) return t; } return TREES[0]; }
+function newSlotTree(){ const t = pickTree(); return {treeId:t.id, phase:'grow', t:0, hitsLeft:0}; }
+for(let i=0;i<6;i++) state.slots[i] = newSlotTree();
+function expNeeded(lv){ return 50 + (lv-1)*5; }
+function currentAxe(){ return AXES.find(a=>a.id===state.axeId); }
+function treeById(id){ return TREES.find(t=>t.id===id); }
+function restartAnimation(el, className) { if(!el) return; el.classList.remove(className); requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add(className); }); }); }
+function toast(msg){ const wrap = document.getElementById('toast-wrap'); const el = document.createElement('div'); el.className='toast'; el.textContent=msg; wrap.appendChild(el); setTimeout(()=>el.remove(), 2700); }
+
+/* ============ 퀴즈 ============ */
+function openQuiz() {
+  if(state.spiritTimeLeft > 0){ toast('이미 가호를 받고 있습니다!'); return; }
+  const a = Math.floor(Math.random() * 8) + 2; const b = Math.floor(Math.random() * 9) + 1;
+  quizExpectedAns = a * b;
+  document.getElementById('quizQuestion').textContent = `${a} × ${b} = ?`;
+  document.getElementById('quizAnswer').value = '';
+  document.getElementById('quizModal').style.display = 'flex';
+  document.getElementById('quizAnswer').focus();
+}
+function closeQuiz() { document.getElementById('quizModal').style.display = 'none'; }
+function checkQuiz() {
+  const ans = parseInt(document.getElementById('quizAnswer').value, 10);
+  if (ans === quizExpectedAns) {
+    state.spiritTimeLeft = 60; toast('✨ 정답! 1분간 산신령의 가호 발동!');
+    document.getElementById('mountainSpirit').classList.add('active');
+  } else { toast('⚡ 오답입니다.'); }
+  closeQuiz();
+}
+document.getElementById('quizAnswer').addEventListener('keyup', (e) => { if(e.key === 'Enter') checkQuiz(); });
+
+/* ============ 로직 ============ */
+function addExp(n){
+  state.exp += n;
+  while(state.level<50 && state.exp>=expNeeded(state.level)){
+    state.exp -= expNeeded(state.level); state.level++; toast(`🎉 레벨 업! Lv.${state.level}`); uiDirty = true;
+  }
+  if(state.level>=50) state.exp = 0;
+}
+
+function chopHit(slotIdx){
+  const slot = state.slots[slotIdx]; if(!slot || slot.phase!=='ready') return;
+  const axe = currentAxe(); if(state.axeDura<=0){ toast('🪓 도끼 파손!'); return; }
+  const tree = treeById(slot.treeId);
+  const hitsNeeded = Math.max(1, Math.round(tree.chop / axe.mult));
+  if(slot.hitsLeft===undefined || slot.hitsLeft<=0) slot.hitsLeft = hitsNeeded;
+  slot.hitsLeft -= 1; state.axeDura = Math.max(0, state.axeDura - (tree.dura / hitsNeeded));
+  const el = document.getElementById('slot-' + slotIdx); if(el) restartAnimation(el, 'shake');
+  
+  if(slotIdx===state.activeSlot){
+    restartAnimation(document.getElementById('frontArm'), 'swing'); spawnChips();
+    restartAnimation(document.getElementById('treeGroup'), 'tree-shake');
+  }
+  
+  if(slot.hitsLeft<=0){
+    let count = (state.job==='lumberjack' && Math.random()<0.3)? 2 : 1;
+    state.woodInv[tree.id] = (state.woodInv[tree.id]||0)+count;
+    state.totalChop += 1; addExp(tree.exp);
+    popFx(slotIdx, `+${count} ${tree.emoji}`, '#fff');
+    state.slots[slotIdx] = newSlotTree(); uiDirty = true;
+    if(slotIdx===state.activeSlot){
+      const tg = document.getElementById('treeGroup'); tg.classList.remove('tree-shake'); tg.classList.add('falling');
+      stageAnim.fellingUntil = performance.now()+600;
+    }
+  }
+  render();
+}
+
+function popFx(i, text, color="#fff"){
+  const el = document.getElementById('slot-' + i); if(!el) return;
+  const fx = document.createElement('div'); fx.className='hit-fx'; fx.textContent=text; fx.style.color = color;
+  fx.style.left='25%'; fx.style.top='40%'; el.appendChild(fx); setTimeout(()=>fx.remove(),600);
+}
+
+function buyAxe(axeId){
+  const axe = AXES.find(a=>a.id===axeId);
+  if(state.gold < axe.cost){ toast('골드가 부족합니다.'); return; }
+  state.gold -= axe.cost; state.axeId = axe.id; state.axeMaxDura = axe.dura + (state.job==='smith'?100:0);
+  state.axeDura = state.axeMaxDura; state.ownedAxes[axe.id]=true; toast(`🪓 ${axe.name} 장착!`); uiDirty = true; render();
+}
+function sellWood(treeId, qty){
+  const tree = treeById(treeId); const have = state.woodInv[treeId]||0; const n = Math.min(qty, have);
+  if(n<=0) return; state.woodInv[treeId] -= n; state.gold += n*tree.price; uiDirty = true; render();
+}
+function sellAll(treeId){ sellWood(treeId, state.woodInv[treeId]||0); }
+function sellAllInventory(){
+  let totalEarned = 0;
+  for (const t of TREES) {
+    const have = state.woodInv[t.id] || 0;
+    if (have > 0) { totalEarned += have * t.price; state.woodInv[t.id] = 0; }
+  }
+  if (totalEarned > 0) { state.gold += totalEarned; toast(`💰 ${totalEarned}Ə 획득!`); uiDirty = true; render(); } 
+  else { toast('판매할 나무가 없습니다.'); }
+}
+
+function chooseJob(jobId){
+  if(state.level<10){ toast('Lv.10 부터 전직 가능합니다.'); return; }
+  if(state.job){ toast('이미 전직했습니다.'); return; }
+  state.job = jobId; toast(`⚔️ 전직 완료!`); uiDirty = true; render();
+}
+
+function selectSlot(i){ state.activeSlot = i; restartAnimation(document.getElementById('treeWrap'), 'pop'); render(); }
+
+let stageAnim = { fellingUntil: 0 };
+const GRADE_COLOR = {C:'#8fae72',B:'#7fbf6b',A:'#6ba8e0',S:'#c589e8',SS:'#ffc94d'};
+
+function spawnChips(){
+  const fx = document.getElementById('fxLayer');
+  for(let k=0;k<5;k++){
+    const chip = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    chip.setAttribute('x',270); chip.setAttribute('y',148); chip.setAttribute('width',6); chip.setAttribute('height',4);
+    chip.setAttribute('fill','#c9812f');
+    chip.style.setProperty('--dx', (Math.random()*44-22).toFixed(1)+'px');
+    chip.style.setProperty('--dy', (-(18+Math.random()*22)).toFixed(1)+'px');
+    chip.classList.add('chip'); fx.appendChild(chip); setTimeout(()=>chip.remove(),500);
+  }
+}
+
+function renderStage(){
+  const slot = state.slots[state.activeSlot]; if(!slot) return;
+  const tree = treeById(slot.treeId); const treeGroup = document.getElementById('treeGroup');
+  document.getElementById('stageTreeName').textContent = tree.name;
+  document.getElementById('stageGrade').textContent = tree.grade;
+  document.getElementById('stageGrade').className = 'grade grade-' + tree.grade;
+
+  if(slot.phase==='ready'){ document.getElementById('stagePhaseTag').textContent='벌목 가능!'; document.getElementById('stagePhaseTag').classList.add('ready'); } 
+  else { document.getElementById('stagePhaseTag').textContent='자라는 중'; document.getElementById('stagePhaseTag').classList.remove('ready'); }
+
+  if(performance.now() < stageAnim.fellingUntil) return;
+  treeGroup.classList.remove('falling'); treeGroup.style.opacity='';
+  let scale = slot.phase==='grow' ? 0.35 + 0.65*Math.min(1, slot.t/tree.grow) : 1;
+  treeGroup.style.transform = `scale(${scale})`;
+  document.querySelectorAll('#treeGroup .canopy').forEach(p=>p.setAttribute('fill', GRADE_COLOR[tree.grade]||'#7fbf6b'));
+}
+
+function render(){
+  document.getElementById('goldVal').textContent = Math.floor(state.gold)+'Ə';
+  document.getElementById('lvVal').textContent = state.level;
+  document.getElementById('totalChopVal').textContent = state.totalChop;
+  document.getElementById('expBar').style.width = state.level>=50?'100%':`${(state.exp/expNeeded(state.level)*100).toFixed(1)}%`;
+  const axe = currentAxe(); document.getElementById('axeName').textContent = axe.name;
+  document.getElementById('axeDuraBar').style.width = `${(state.axeDura/state.axeMaxDura*100).toFixed(1)}%`;
+  document.getElementById('titleBadge').textContent = state.job ? JOBS.find(j=>j.id===state.job).name : '칭호 없음';
+  renderForest(); renderStage();
+  document.getElementById('playtime').textContent = `${Math.floor(state.playSeconds/60)}분`;
+}
+
+function renderForest(){
+  const panel = document.getElementById('slotsPanel'); let grid = panel.querySelector('.forest-grid');
+  if(!grid) {
+    grid = document.createElement('div'); grid.className='forest-grid';
+    for(let i=0; i<6; i++){
+      const div = document.createElement('div'); div.className = 'slot'; div.id = 'slot-' + i;
+      div.onclick = ()=>{ state.slots[i].phase==='ready' ? (state.activeSlot=i, chopHit(i)) : selectSlot(i); };
+      grid.appendChild(div);
+    }
+    panel.innerHTML=''; panel.appendChild(grid);
+  }
+  state.slots.forEach((slot,i)=>{
+    const tree = treeById(slot.treeId); const div = document.getElementById('slot-' + i); if(!div) return;
+    const hitFx = Array.from(div.querySelectorAll('.hit-fx'));
+    div.className = 'slot ' + (slot.phase==='grow'?'growing':'') + (i===state.activeSlot?' active-slot':'');
+    let html = '';
+    if(slot.phase==='ready'){
+      const hitsNeeded = Math.max(1, Math.round(tree.chop/currentAxe().mult));
+      const pct = Math.max(0, 100 - ((slot.hitsLeft!==undefined?slot.hitsLeft:hitsNeeded)/hitsNeeded*100));
+      html = `<span class="grade grade-${tree.grade}">${tree.grade}</span><div class="tree-emoji">${tree.emoji}</div><div class="tree-name">${tree.name}</div><div class="chopbar bar-wrap"><div class="bar-fill chop" style="width:${pct}%"></div></div>`;
+    } else {
+      const pct = Math.min(100, slot.t/tree.grow*100);
+      html = `<span class="grade grade-${tree.grade}">${tree.grade}</span><div class="tree-emoji">${tree.emoji}</div><div class="tree-name" style="opacity:.6;">자라는 중...</div><div class="growbar bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+    }
+    div.innerHTML = html; hitFx.forEach(fx => div.appendChild(fx));
+  });
+}
+
+function renderAxePanel(){
+  document.getElementById('axePanel').innerHTML = `<div class="shop-sub-label">🪓 도끼 상점</div>` + AXES.map(a=>`
+    <div class="row-item"><div class="ic">🪓</div><div class="nm">${a.name}<span class="sm">속도 ${a.mult.toFixed(1)}×</span></div>
+    <div class="ct">${a.cost}Ə</div><button class="buy-btn" ${(state.gold<a.cost)?'disabled':''} onclick="buyAxe('${a.id}')">${state.axeId===a.id?'장착중':'구매'}</button></div>`).join('');
+}
+function renderSellPanel(){
+  document.getElementById('sellPanel').innerHTML = `<div class="shop-sub-label">🪵 나무 판매</div><button class="sell-all-btn" onclick="sellAllInventory()">💰 모든 나무 일괄 판매</button>` + TREES.map(t=>{
+    const have = state.woodInv[t.id]||0;
+    return `<div class="row-item"><div class="ic">${t.emoji}</div><div class="nm">${t.name}<span class="sm">개당 ${t.price}Ə · 보유 ${have}개</span></div><button class="sell-btn" ${have<=0?'disabled':''} onclick="sellAll('${t.id}')">전부 판매</button></div>`;
+  }).join('');
+}
+function renderJobs(){
+  document.getElementById('jobsPanel').innerHTML = state.level<10 ? `<p style="font-size:13px;color:var(--parchment-dim);">🔒 Lv.10부터 전직 가능</p>` : JOBS.map(j=>`
+    <div class="row-item"><div class="ic">⚔️</div><div class="nm">${j.name}<span class="sm">${j.desc}</span></div><button class="buy-btn" ${state.job?'disabled':''} onclick="chooseJob('${j.id}')">${state.job===j.id?'선택됨':'전직'}</button></div>`).join('');
+}
+function renderAch(){
+  document.getElementById('achPanel').innerHTML = ACHIEVEMENTS.map(a=>`<div class="row-item ach-item ${state.achDone[a.id]?'done':''}"><div class="ic">🏅</div><div class="nm">${a.name}<span class="sm">${a.desc}</span></div></div>`).join('');
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active'); document.getElementById(btn.dataset.panel).classList.add('active');
+  });
+});
+
+document.getElementById('stageSvg').addEventListener('click', ()=>{ const slot = state.slots[state.activeSlot]; if(slot && slot.phase==='ready') chopHit(state.activeSlot); });
+
+let lastTick = performance.now();
+function tick(now){
+  const dt = (now-lastTick)/1000; lastTick = now; state.playSeconds += dt;
+  const isActive = state.spiritTimeLeft > 0;
+  if(isActive){
+    state.spiritTimeLeft -= dt;
+    if(state.spiritTimeLeft <= 0){ state.spiritTimeLeft = 0; toast('산신령의 가호가 끝났습니다.'); document.getElementById('mountainSpirit').classList.remove('active'); }
+  }
+  const btn = document.getElementById('callSpiritBtn');
+  if(isActive){ btn.textContent = `✨ 가호 중 (${Math.ceil(state.spiritTimeLeft)}초)`; btn.style.background = 'var(--amber-bright)'; btn.style.color = '#111'; }
+  else { btn.textContent = `🙏 산신령 호출`; btn.style.background = ''; btn.style.color = ''; }
+
+  state.slots.forEach((slot, i) => {
+    if(slot.phase==='grow'){
+      slot.t += dt * (isActive ? 2 : 1);
+      if(slot.t >= treeById(slot.treeId).grow){ slot.phase = 'ready'; slot.hitsLeft = undefined; uiDirty = true; }
+    }
+    if(isActive && slot.phase === 'ready'){
+      const tree = treeById(slot.treeId); state.totalChop += 1; addExp(tree.exp); state.gold += tree.price;
+      popFx(i, `+${tree.price}Ə (자동)`, '#ffc94d'); state.slots[i] = newSlotTree(); uiDirty = true;
+      if(state.activeSlot === i){ document.getElementById('treeGroup').classList.add('falling'); stageAnim.fellingUntil = performance.now()+600; }
+    }
+  });
+
+  render();
+  if(uiDirty){ renderAxePanel(); renderSellPanel(); renderJobs(); renderAch(); uiDirty = false; }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+uiDirty = true; render();
+</script>
+</body>
+</html>
