@@ -33,8 +33,6 @@
   }
   h1,h2,h3{font-family:'Black Han Sans', sans-serif; letter-spacing:1px; margin:0;}
 
-  #app{max-width:720px;margin:0 auto;padding:10px 10px 40px;}
-
   /* ================= 모달 (로그인/퀴즈) ================= */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -62,6 +60,8 @@
   #quizAnswer { font-size: 24px; width:120px; }
 
   /* ================= 상단 애니메이션 스테이지 ================= */
+  #app{max-width:720px;margin:0 auto;padding:10px 10px 40px;}
+
   #stage{
     position:relative;border-radius:16px;overflow:hidden;margin-bottom:10px;
     border:2px solid #6b4a30;box-shadow:0 6px 0 #241811;
@@ -116,7 +116,7 @@
   .bar-fill.dura{background:linear-gradient(90deg,#7a8fb0,#a9c1e0);}
   .bar-fill.chop{background:linear-gradient(90deg,var(--amber),var(--amber-bright));}
 
-  /* 나무 그룹 / 캐릭터 애니메이션 등 */
+  /* 나무 그룹 애니메이션 */
   #treeWrap{transform-origin:280px 172px;}
   #treeWrap.pop{animation:popBounce .3s ease-out;}
   @keyframes popBounce{ 0%{transform:scale(.85);} 55%{transform:scale(1.12);} 100%{transform:scale(1);} }
@@ -132,16 +132,34 @@
   .canopy{stroke:#16210f;stroke-width:2;stroke-linejoin:round;transition:fill .2s;}
   #treeGroup.tree-ready .canopy{filter:drop-shadow(0 0 5px rgba(232,168,76,.55));}
   
+  /* 산신령 효과 */
   #mountainSpirit { transition: transform 1.2s cubic-bezier(0.2, 1.2, 0.5, 1), opacity 0.8s ease; transform-origin: 60px 180px; transform: translateY(60px) scale(0.6); opacity: 0; }
   #mountainSpirit.active { transform: translateY(0px) scale(1); opacity: 1; }
   .spirit-glow { animation: spiritPulse 2s infinite alternate; }
   @keyframes spiritPulse { 0% { filter: drop-shadow(0 0 5px rgba(107, 203, 255, 0.5)); } 100% { filter: drop-shadow(0 0 18px rgba(255, 252, 153, 0.9)); } }
 
-  #lumberjack{animation:idleBob 2.2s ease-in-out infinite;transform-origin:170px 172px;}
+  /* 나무꾼 애니메이션 및 버프 이펙트 */
+  #lumberjack{
+    animation:idleBob 2.2s ease-in-out infinite;
+    transform-origin:170px 172px;
+    transition: filter 0.3s;
+  }
   @keyframes idleBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-2.5px);} }
+  
   #frontArm{transform-origin:180px 102px;transform:rotate(-12deg);}
   #frontArm.swing{animation:swingArm .32s cubic-bezier(.3,0,.4,1);}
   @keyframes swingArm{ 0%{transform:rotate(-12deg);} 45%{transform:rotate(78deg);} 100%{transform:rotate(-12deg);} }
+  
+  /* 산신령의 가호 발동 시 나무꾼 스타일 변경 (속도 2배, 황금빛 후광) */
+  #lumberjack.spirit-buff {
+    animation-duration: 1.1s; /* 대기 애니메이션 2배 속도 */
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 15px rgba(255, 180, 0, 0.5));
+  }
+  /* 스윙 속도도 2배 (0.32s -> 0.16s) */
+  .spirit-buff #frontArm.swing {
+    animation-duration: 0.16s !important;
+  }
+
   .chip{animation:chipFly .5s ease-out forwards;}
   @keyframes chipFly{ 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) rotate(220deg);opacity:0;} }
 
@@ -459,7 +477,6 @@ function login() {
   document.getElementById('loginModal').style.display = 'none';
   toast(`환영합니다, ${name}님!`);
   
-  // 닉네임 생성 즉시 저장 (서버 데이터베이스 등록)
   saveRecordToServer();
 }
 
@@ -482,14 +499,13 @@ function saveRecordToServer() {
 
   fetch(API_URL, {
     method: 'POST',
-    // 구글 앱스 스크립트의 CORS 우회를 위해 헤더를 text/plain 으로 지정
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
   })
-  .then(res => res.text()) // GAS 응답이 완벽한 JSON이 아닐 경우를 대비해 text로 수신
+  .then(res => res.text())
   .then(text => {
     toast('성공적으로 저장되었습니다!');
-    loadRanking(); // 저장 후 랭킹 정보 갱신
+    loadRanking();
   })
   .catch(err => {
     console.error(err);
@@ -737,13 +753,31 @@ let lastTick = performance.now();
 function tick(now){
   const dt = (now-lastTick)/1000; lastTick = now; state.playSeconds += dt;
   const isActive = state.spiritTimeLeft > 0;
+  const lumberjackEl = document.getElementById('lumberjack');
+  
   if(isActive){
     state.spiritTimeLeft -= dt;
-    if(state.spiritTimeLeft <= 0){ state.spiritTimeLeft = 0; toast('산신령의 가호가 끝났습니다.'); document.getElementById('mountainSpirit').classList.remove('active'); }
+    if(state.spiritTimeLeft <= 0){ 
+      state.spiritTimeLeft = 0; 
+      toast('산신령의 가호가 끝났습니다.'); 
+      document.getElementById('mountainSpirit').classList.remove('active'); 
+    }
   }
+  
   const btn = document.getElementById('callSpiritBtn');
-  if(isActive){ btn.textContent = `✨ 가호 중 (${Math.ceil(state.spiritTimeLeft)}초)`; btn.style.background = 'var(--amber-bright)'; btn.style.color = '#111'; }
-  else { btn.textContent = `🙏 산신령 호출`; btn.style.background = ''; btn.style.color = ''; }
+  if(isActive){ 
+    btn.textContent = `✨ 가호 중 (${Math.ceil(state.spiritTimeLeft)}초)`; 
+    btn.style.background = 'var(--amber-bright)'; 
+    btn.style.color = '#111'; 
+    // 나무꾼 버프 활성화
+    lumberjackEl.classList.add('spirit-buff');
+  } else { 
+    btn.textContent = `🙏 산신령 호출`; 
+    btn.style.background = ''; 
+    btn.style.color = ''; 
+    // 나무꾼 버프 해제
+    lumberjackEl.classList.remove('spirit-buff');
+  }
 
   state.slots.forEach((slot, i) => {
     if(slot.phase==='grow'){
@@ -753,7 +787,14 @@ function tick(now){
     if(isActive && slot.phase === 'ready'){
       const tree = treeById(slot.treeId); state.totalChop += 1; addExp(tree.exp); state.gold += tree.price;
       popFx(i, `+${tree.price}Ə (자동)`, '#ffc94d'); state.slots[i] = newSlotTree(); uiDirty = true;
-      if(state.activeSlot === i){ document.getElementById('treeGroup').classList.add('falling'); stageAnim.fellingUntil = performance.now()+600; }
+      
+      if(state.activeSlot === i){ 
+        // 💡 자동 벌목 시에도 나무꾼이 빠르게 도끼질하는 애니메이션 연출
+        restartAnimation(document.getElementById('frontArm'), 'swing');
+        spawnChips();
+        document.getElementById('treeGroup').classList.add('falling'); 
+        stageAnim.fellingUntil = performance.now()+600; 
+      }
     }
   });
 
