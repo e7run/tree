@@ -569,7 +569,7 @@ function closeQuiz() { document.getElementById('quizModal').style.display = 'non
 function checkQuiz() {
   const ans = parseInt(document.getElementById('quizAnswer').value, 10);
   if (ans === quizExpectedAns) {
-    state.spiritTimeLeft = 60; toast('✨ 정답! 1분간 산신령의 가호 발동!');
+    state.spiritTimeLeft = 10; toast('✨ 정답! 10초간 산신령의 가호 발동!');
     document.getElementById('mountainSpirit').classList.add('active');
   } else { toast('⚡ 오답입니다.'); }
   closeQuiz();
