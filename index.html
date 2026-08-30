@@ -35,7 +35,7 @@
 
   #app{max-width:720px;margin:0 auto;padding:10px 10px 40px;}
 
-  /* ================= 모달 (로그인/퀴즈) ================= */
+  /* ================= 모달 ================= */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.8); display: none; z-index: 100;
@@ -92,7 +92,6 @@
   #callSpiritBtn{cursor:pointer; border-color:var(--moss); font-weight:bold; transition: background 0.3s;}
   #callSpiritBtn:hover{background:rgba(255,255,255,0.1);}
 
-  /* 애니메이션 창 우측 하단 저장 버튼 */
   .stage-save-btn {
     position: absolute; bottom: 56px; right: 8px; z-index: 10;
     background: rgba(20, 14, 8, 0.7); border: 1px solid var(--amber-bright);
@@ -132,11 +131,17 @@
   .canopy{stroke:#16210f;stroke-width:2;stroke-linejoin:round;transition:fill .2s;}
   #treeGroup.tree-ready .canopy{filter:drop-shadow(0 0 5px rgba(232,168,76,.55));}
   
-  /* 산신령 효과 */
+  /* 산신령 & 선녀 효과 */
   #mountainSpirit { transition: transform 1.2s cubic-bezier(0.2, 1.2, 0.5, 1), opacity 0.8s ease; transform-origin: 60px 180px; transform: translateY(60px) scale(0.6); opacity: 0; }
   #mountainSpirit.active { transform: translateY(0px) scale(1); opacity: 1; }
   .spirit-glow { animation: spiritPulse 2s infinite alternate; }
+  
+  #fairy { transition: transform 2.5s cubic-bezier(0.2, 0.8, 0.4, 1), opacity 1s ease; transform: translateY(-200px); opacity: 0; }
+  #fairy.active { transform: translateY(0px); opacity: 1; }
+  .fairy-glow { animation: fairyPulse 1.5s infinite alternate; }
+  
   @keyframes spiritPulse { 0% { filter: drop-shadow(0 0 5px rgba(107, 203, 255, 0.5)); } 100% { filter: drop-shadow(0 0 18px rgba(255, 252, 153, 0.9)); } }
+  @keyframes fairyPulse { 0% { filter: drop-shadow(0 0 8px rgba(255,182,193,0.6)); } 100% { filter: drop-shadow(0 0 25px rgba(255,255,255,1)); } }
 
   /* 나무꾼 애니메이션 및 버프 이펙트 */
   #lumberjack{
@@ -152,10 +157,9 @@
   
   /* 산신령의 가호 발동 시 나무꾼 스타일 변경 (속도 2배, 황금빛 후광) */
   #lumberjack.spirit-buff {
-    animation-duration: 1.1s; /* 대기 애니메이션 2배 속도 */
+    animation-duration: 1.1s; 
     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 15px rgba(255, 180, 0, 0.5));
   }
-  /* 스윙 속도도 2배 (0.32s -> 0.16s) */
   .spirit-buff #frontArm.swing {
     animation-duration: 0.16s !important;
   }
@@ -268,6 +272,18 @@
   </div>
 </div>
 
+<!-- 선녀 이벤트 모달 -->
+<div id="fairyModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 style="color:var(--amber-bright);">산신령의 질문</h3>
+    <p style="font-size:14px; margin-bottom:20px;">"이 금도끼가 네 도끼냐,<br>아니면 이 은도끼가 네 도끼냐?"</p>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="btn-confirm" style="background:#ffd93d; color:#111;" onclick="answerFairy()">금도끼입니다</button>
+      <button class="btn-confirm" style="background:#e0e0e0; color:#111;" onclick="answerFairy()">은도끼입니다</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-wrap"></div>
 <div id="app">
 
@@ -285,6 +301,18 @@
         </linearGradient>
       </defs>
       <rect x="0" y="0" width="400" height="200" fill="url(#skyGrad)"/>
+      
+      <!-- 선녀 (하늘에서 내려옴) -->
+      <g id="fairy">
+        <g class="fairy-glow">
+          <path d="M220,50 Q190,10 175,25 Q195,50 220,60" fill="#e0f7fa" opacity="0.8"/>
+          <path d="M220,50 Q250,10 265,25 Q245,50 220,60" fill="#e0f7fa" opacity="0.8"/>
+          <ellipse cx="220" cy="18" rx="12" ry="3" fill="none" stroke="#fffacd" stroke-width="2"/>
+          <path d="M220,40 L200,95 Q220,110 240,95 Z" fill="#ffffff" opacity="0.9"/>
+          <circle cx="220" cy="32" r="9" fill="#ffe0bd"/>
+        </g>
+      </g>
+
       <path d="M0,150 Q60,122 120,142 T240,136 T400,146 V200 H0 Z" fill="#24371f"/>
       <path d="M0,164 Q80,140 160,160 T400,156 V200 H0 Z" fill="#1a2814"/>
       
@@ -343,7 +371,6 @@
       <g id="fxLayer"></g>
     </svg>
 
-    <!-- 💡 애니메이션 화면 오른쪽 아래 서버 저장 버튼 -->
     <button class="stage-save-btn" onclick="saveRecordToServer()">💾 기록 저장</button>
 
     <div id="stageTopRow">
@@ -409,7 +436,7 @@
 <script>
 /* ================= 앱스 스크립트 API URL ================= */
 // ★여기에 구글 앱스 스크립트 배포 후 얻은 웹 앱 URL을 붙여넣으세요.
-const API_URL = 'AKfycbx7UGi_r2ZRP2qfxzb1bU4_GmLX8NsPYgc1gNwuffZieU2bJu2d8lhihzD9HHGTlDOV0A';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7UGi_r2ZRP2qfxzb1bU4_GmLX8NsPYgc1gNwuffZieU2bJu2d8lhihzD9HHGTlDOV0A/exec';
 
 /* ============ 데이터 ============ */
 const TREES = [
@@ -428,6 +455,8 @@ const AXES = [
   {id:'wood',   name:'나무 도끼', mult:1.0, dura:100, cost:100},
   {id:'stone',  name:'돌 도끼',   mult:1.1, dura:150, cost:200},
   {id:'iron',   name:'철 도끼',   mult:1.3, dura:200, cost:350},
+  // 이벤트 전용 숨겨진 도끼
+  {id:'fairy_gold', name:'선녀의 금도끼', mult:3.0, dura:20, cost:0, hidden:true}, 
 ];
 
 const JOBS = [
@@ -453,6 +482,7 @@ let state = {
 let uiDirty = true;
 let quizExpectedAns = 0;
 let isSaving = false;
+let fairyEventTimer = 0;
 
 // 게임 시작 시 동작
 window.onload = () => {
@@ -460,7 +490,7 @@ window.onload = () => {
   if (savedName) {
     state.nickname = savedName;
     document.getElementById('playerName').textContent = state.nickname;
-    loadRanking(); // 앱 로드 시 랭킹 불러오기
+    loadRanking(); 
   } else {
     document.getElementById('loginModal').style.display = 'flex';
   }
@@ -476,7 +506,6 @@ function login() {
   document.getElementById('playerName').textContent = name;
   document.getElementById('loginModal').style.display = 'none';
   toast(`환영합니다, ${name}님!`);
-  
   saveRecordToServer();
 }
 
@@ -486,7 +515,6 @@ function saveRecordToServer() {
   if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') {
     toast('API_URL이 설정되지 않았습니다. 코드를 확인해주세요.'); return;
   }
-  
   isSaving = true;
   toast('서버에 기록을 저장하는 중...');
   
@@ -499,7 +527,6 @@ function saveRecordToServer() {
 
   fetch(API_URL, {
     method: 'POST',
-    // 구글 서버 통신 시 오류를 피하기 위해 text/plain 방식 사용
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
   })
@@ -561,7 +588,7 @@ function treeById(id){ return TREES.find(t=>t.id===id); }
 function restartAnimation(el, className) { if(!el) return; el.classList.remove(className); requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add(className); }); }); }
 function toast(msg){ const wrap = document.getElementById('toast-wrap'); const el = document.createElement('div'); el.className='toast'; el.textContent=msg; wrap.appendChild(el); setTimeout(()=>el.remove(), 2700); }
 
-/* ============ 퀴즈 ============ */
+/* ============ 퀴즈 & 선녀 이벤트 ============ */
 function openQuiz() {
   if(state.spiritTimeLeft > 0){ toast('이미 가호를 받고 있습니다!'); return; }
   const a = Math.floor(Math.random() * 8) + 2; const b = Math.floor(Math.random() * 9) + 1;
@@ -575,12 +602,42 @@ function closeQuiz() { document.getElementById('quizModal').style.display = 'non
 function checkQuiz() {
   const ans = parseInt(document.getElementById('quizAnswer').value, 10);
   if (ans === quizExpectedAns) {
-    state.spiritTimeLeft = 60; toast('✨ 정답! 1분간 산신령의 가호 발동!');
+    state.spiritTimeLeft = 5; toast('✨ 정답! 5초간 산신령의 가호 발동!');
     document.getElementById('mountainSpirit').classList.add('active');
   } else { toast('⚡ 오답입니다.'); }
   closeQuiz();
 }
 document.getElementById('quizAnswer').addEventListener('keyup', (e) => { if(e.key === 'Enter') checkQuiz(); });
+
+function startFairyEvent() {
+  document.getElementById('fairy').classList.add('active');
+  document.getElementById('mountainSpirit').classList.add('active');
+  document.getElementById('fairyModal').style.display = 'flex';
+}
+
+function answerFairy() {
+  document.getElementById('fairyModal').style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('fairy').classList.remove('active');
+    // 산신령 버프가 활성화되어 있지 않으면 산신령도 퇴장
+    if (state.spiritTimeLeft <= 0) {
+      document.getElementById('mountainSpirit').classList.remove('active');
+    }
+  }, 1500);
+
+  if (Math.random() < 0.5) {
+    // 성공
+    state.axeId = 'fairy_gold';
+    state.axeMaxDura = 20; // 20회 전용
+    state.axeDura = 20;
+    toast('✨ 산신령이 만족하며 선녀의 금도끼를 줍니다! (속도 3배 / 20회 제한)');
+    uiDirty = true;
+    render();
+  } else {
+    // 실패
+    toast('⚡ 산신령이 괘씸하다며 아무것도 주지 않고 사라집니다...');
+  }
+}
 
 /* ============ 로직 ============ */
 function addExp(n){
@@ -593,11 +650,19 @@ function addExp(n){
 
 function chopHit(slotIdx){
   const slot = state.slots[slotIdx]; if(!slot || slot.phase!=='ready') return;
-  const axe = currentAxe(); if(state.axeDura<=0){ toast('🪓 도끼 파손!'); return; }
+  const axe = currentAxe(); if(state.axeDura<=0){ toast('🪓 도끼 파손! 새 도끼를 구매하세요.'); return; }
   const tree = treeById(slot.treeId);
   const hitsNeeded = Math.max(1, Math.round(tree.chop / axe.mult));
   if(slot.hitsLeft===undefined || slot.hitsLeft<=0) slot.hitsLeft = hitsNeeded;
-  slot.hitsLeft -= 1; state.axeDura = Math.max(0, state.axeDura - (tree.dura / hitsNeeded));
+  slot.hitsLeft -= 1; 
+
+  // 이벤트 금도끼는 한 번 휘두를 때마다 내구도 정확히 1 감소 (20회 제한)
+  if(axe.id === 'fairy_gold') {
+    state.axeDura = Math.max(0, state.axeDura - 1);
+  } else {
+    state.axeDura = Math.max(0, state.axeDura - (tree.dura / hitsNeeded));
+  }
+  
   const el = document.getElementById('slot-' + slotIdx); if(el) restartAnimation(el, 'shake');
   
   if(slotIdx===state.activeSlot){
@@ -727,7 +792,8 @@ function renderForest(){
 }
 
 function renderAxePanel(){
-  document.getElementById('axePanel').innerHTML = `<div class="shop-sub-label">🪓 도끼 상점</div>` + AXES.map(a=>`
+  // 숨겨진(hidden) 이벤트용 도끼는 상점에 출력하지 않음
+  document.getElementById('axePanel').innerHTML = `<div class="shop-sub-label">🪓 도끼 상점</div>` + AXES.filter(a=>!a.hidden).map(a=>`
     <div class="row-item"><div class="ic">🪓</div><div class="nm">${a.name}<span class="sm">속도 ${a.mult.toFixed(1)}×</span></div>
     <div class="ct">${a.cost}Ə</div><button class="buy-btn" ${(state.gold<a.cost)?'disabled':''} onclick="buyAxe('${a.id}')">${state.axeId===a.id?'장착중':'구매'}</button></div>`).join('');
 }
@@ -767,6 +833,15 @@ function tick(now){
       state.spiritTimeLeft = 0; 
       toast('산신령의 가호가 끝났습니다.'); 
       document.getElementById('mountainSpirit').classList.remove('active'); 
+    }
+  }
+
+  // 선녀 이벤트 타이머 (1분마다 5% 확률)
+  fairyEventTimer += dt;
+  if(fairyEventTimer >= 60) {
+    fairyEventTimer = 0;
+    if(Math.random() < 0.05) {
+      startFairyEvent();
     }
   }
   
