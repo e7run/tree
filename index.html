@@ -8,34 +8,23 @@
   @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap');
 
   :root{
-    --pine-deep:#1c2b1a;
-    --pine-mid:#2c3e26;
-    --bark:#5b3f2c;
-    --bark-dark:#3d2a1c;
-    --amber:#c9812f;
-    --amber-bright:#e8a84c;
-    --moss:#7d9a5c;
-    --parchment:#efe6d3;
-    --parchment-dim:#d9cdae;
-    --blood:#a9432f;
+    --pine-deep:#1c2b1a; --pine-mid:#2c3e26; --bark:#5b3f2c; --bark-dark:#3d2a1c;
+    --amber:#c9812f; --amber-bright:#e8a84c; --moss:#7d9a5c;
+    --parchment:#efe6d3; --parchment-dim:#d9cdae; --blood:#a9432f;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
   body{
     font-family:'Gowun Dodum', sans-serif;
-    background:
-      radial-gradient(ellipse at top, #24371f 0%, var(--pine-deep) 55%, #0f1810 100%);
-    color:var(--parchment);
-    min-height:100vh;
-    overflow-x:hidden;
-    -webkit-tap-highlight-color: transparent;
-    user-select:none;
+    background: radial-gradient(ellipse at top, #24371f 0%, var(--pine-deep) 55%, #0f1810 100%);
+    color:var(--parchment); min-height:100vh; overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent; user-select:none;
   }
   h1,h2,h3{font-family:'Black Han Sans', sans-serif; letter-spacing:1px; margin:0;}
 
   #app{max-width:720px;margin:0 auto;padding:10px 10px 40px;}
 
-  /* ================= 모달 ================= */
+  /* ================= 모달 (로그인/퀴즈) ================= */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.8); display: none; z-index: 100;
@@ -48,31 +37,31 @@
   }
   .modal-box h3 { color: var(--amber-bright); margin-bottom: 15px; font-family:'Black Han Sans'; font-size:22px;}
   .modal-box input {
-    font-size: 18px; padding: 10px; width: 100%; text-align: center; font-weight: bold; font-family:'Gowun Dodum';
-    margin: 15px 0 20px; background: var(--pine-deep); color: #fff;
+    font-size: 16px; padding: 10px; width: 100%; text-align: center; font-weight: bold; font-family:'Gowun Dodum';
+    margin: 6px 0; background: var(--pine-deep); color: #fff;
     border: 2px solid var(--moss); outline: none; border-radius: 8px;
   }
   .modal-box button {
-    padding: 10px 20px; margin: 0 4px; border: none; border-radius: 8px;
-    font-weight: bold; cursor: pointer; font-size: 14px;
+    padding: 10px 16px; margin: 10px 4px 0; border: none; border-radius: 8px;
+    font-weight: bold; cursor: pointer; font-size: 13px; transition: transform 0.1s;
   }
+  .modal-box button:active { transform: scale(0.95); }
   .btn-confirm { background: var(--amber-bright); color: #111; }
+  .btn-load { background: #6ba8e0; color: #111; }
   .btn-cancel { background: #4a4a44; color: #fff; }
 
-  #quizAnswer { font-size: 24px; width:120px; }
+  #quizAnswer { font-size: 24px; width:120px; margin-top:15px; }
 
   /* ================= 상단 애니메이션 스테이지 ================= */
   #stage{
     position:relative;border-radius:16px;overflow:hidden;margin-bottom:10px;
-    border:2px solid #6b4a30;box-shadow:0 6px 0 #241811;
-    background:#1c2b1a;
+    border:2px solid #6b4a30;box-shadow:0 6px 0 #241811; background:#1c2b1a;
   }
   #stageSvg{display:block;width:100%;height:auto;cursor:pointer;}
 
   #stageTopRow{
     position:absolute;top:8px;left:8px;right:8px;
-    display:flex;justify-content:space-between;align-items:flex-start;
-    pointer-events:none;
+    display:flex;justify-content:space-between;align-items:flex-start; pointer-events:none;
   }
   #stageOverlay{
     display:flex;align-items:center;gap:6px;
@@ -145,9 +134,7 @@
 
   /* 나무꾼 애니메이션 및 버프 이펙트 */
   #lumberjack{
-    animation:idleBob 2.2s ease-in-out infinite;
-    transform-origin:170px 172px;
-    transition: filter 0.3s;
+    animation:idleBob 2.2s ease-in-out infinite; transform-origin:170px 172px; transition: filter 0.3s;
   }
   @keyframes idleBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-2.5px);} }
   
@@ -155,14 +142,11 @@
   #frontArm.swing{animation:swingArm .32s cubic-bezier(.3,0,.4,1);}
   @keyframes swingArm{ 0%{transform:rotate(-12deg);} 45%{transform:rotate(78deg);} 100%{transform:rotate(-12deg);} }
   
-  /* 산신령의 가호 발동 시 나무꾼 스타일 변경 (속도 2배, 황금빛 후광) */
   #lumberjack.spirit-buff {
     animation-duration: 1.1s; 
     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 15px rgba(255, 180, 0, 0.5));
   }
-  .spirit-buff #frontArm.swing {
-    animation-duration: 0.16s !important;
-  }
+  .spirit-buff #frontArm.swing { animation-duration: 0.16s !important; }
 
   .chip{animation:chipFly .5s ease-out forwards;}
   @keyframes chipFly{ 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) rotate(220deg);opacity:0;} }
@@ -179,7 +163,6 @@
 
   .panel{display:none;background:rgba(0,0,0,.25);border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.08);max-height:56vh;overflow-y:auto;}
   .panel.active{display:block;}
-
   .shop-sub-label{font-size:11px;color:var(--moss);margin:2px 2px 6px;font-weight:bold;letter-spacing:.5px;}
 
   /* ---------- Forest grid (나무 슬롯 탭) ---------- */
@@ -221,7 +204,6 @@
   .buy-btn:disabled, .sell-btn:disabled{background:#4a4a44;color:#8a8a80;cursor:not-allowed;}
   .sell-all-btn { width: 100%; padding: 12px; margin-bottom: 12px; background: #e8a84c; color: #111; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 0 #c9812f; transition: transform 0.1s, box-shadow 0.1s; }
   .sell-all-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #c9812f; }
-
   .ach-item{opacity:.4;} .ach-item.done{opacity:1;} .ach-item .ic{color:var(--amber-bright);} .ach-item.done .ic::after{content:" ✓";color:#8bd66b;}
 
   /* 랭킹 탭 스타일 */
@@ -248,14 +230,17 @@
 </head>
 <body>
 
-<!-- 로그인 모달 -->
+<!-- 로그인 / 회원가입 모달 -->
 <div id="loginModal" class="modal-overlay">
   <div class="modal-box">
     <h3>벌목의 달인</h3>
-    <p style="font-size:13px; color:#d9cdae; margin-bottom:5px;">게임에 사용할 닉네임을 입력해주세요.</p>
-    <input type="text" id="nicknameInput" placeholder="닉네임 (2~8자)" maxlength="8">
-    <br>
-    <button class="btn-confirm" onclick="login()">시작하기</button>
+    <p style="font-size:13px; color:#d9cdae; margin-bottom:15px;">계정 정보를 입력해 주세요.</p>
+    <input type="text" id="nicknameInput" placeholder="아이디 (닉네임)" maxlength="8">
+    <input type="password" id="passwordInput" placeholder="비밀번호" maxlength="12">
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+      <button class="btn-confirm" id="btnRegister" onclick="handleAuth('register')">새로 생성</button>
+      <button class="btn-load" id="btnLoad" onclick="handleAuth('load')">불러오기</button>
+    </div>
   </div>
 </div>
 
@@ -435,8 +420,8 @@
 
 <script>
 /* ================= 앱스 스크립트 API URL ================= */
-// ★여기에 구글 앱스 스크립트 배포 후 얻은 웹 앱 URL을 붙여넣으세요.
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7UGi_r2ZRP2qfxzb1bU4_GmLX8NsPYgc1gNwuffZieU2bJu2d8lhihzD9HHGTlDOV0A/exec';
+// ★여기에 새로 배포한 웹 앱 URL을 붙여넣으세요!
+const API_URL = 'https://script.google.com/macros/s/AKfycbyL-3qYqM-2D4E47OrvvEu6v4Hue-K9Gk4t_csyLRfB_GRFWj8WrIncv_301vdTSgogqg/exec';
 
 /* ============ 데이터 ============ */
 const TREES = [
@@ -470,9 +455,9 @@ const ACHIEVEMENTS = [
   {id:'a19',name:'애너지 폭발', desc:'레벨 50 달성', check:s=>s.level>=50},
 ];
 
-/* ============ 상태 및 로그인 ============ */
+/* ============ 상태 ============ */
 let state = {
-  nickname: '',
+  nickname: '', password: '',
   gold: 50, level: 1, exp: 0, totalChop: 0, rareChop: 0, nightChop: 0, playSeconds: 0,
   job: null, axeId: 'wood', axeDura: 100, axeMaxDura: 100, ownedAxes: {wood:true},
   woodInv: {}, woodChopped: {}, achDone: {}, activeSlot: 0,
@@ -484,42 +469,92 @@ let quizExpectedAns = 0;
 let isSaving = false;
 let fairyEventTimer = 0;
 
-// 게임 시작 시 동작
+/* ============ 로그인 & 불러오기 처리 ============ */
 window.onload = () => {
   const savedName = localStorage.getItem('lumberjack_nickname');
-  if (savedName) {
-    state.nickname = savedName;
-    document.getElementById('playerName').textContent = state.nickname;
-    loadRanking(); 
+  const savedPw = localStorage.getItem('lumberjack_password');
+  
+  if (savedName && savedPw) {
+    document.getElementById('nicknameInput').value = savedName;
+    document.getElementById('passwordInput').value = savedPw;
+    // 정보가 있으면 모달을 띄운 상태로 바로 서버에서 불러오기 시도
+    document.getElementById('loginModal').style.display = 'flex';
+    handleAuth('load');
   } else {
     document.getElementById('loginModal').style.display = 'flex';
   }
 };
 
-function login() {
-  const name = document.getElementById('nicknameInput').value.trim();
-  if (name.length < 2) {
-    toast('닉네임을 2자 이상 입력해주세요.'); return;
+function handleAuth(actionType) {
+  if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') {
+    toast('먼저 스크립트 API_URL을 코드에 입력해주세요.'); return;
   }
-  state.nickname = name;
-  localStorage.setItem('lumberjack_nickname', name);
-  document.getElementById('playerName').textContent = name;
-  document.getElementById('loginModal').style.display = 'none';
-  toast(`환영합니다, ${name}님!`);
-  saveRecordToServer();
+  
+  const name = document.getElementById('nicknameInput').value.trim();
+  const pw = document.getElementById('passwordInput').value.trim();
+  
+  if(name.length < 2) { toast('아이디(닉네임)를 2자 이상 적어주세요.'); return; }
+  if(pw.length < 4) { toast('비밀번호를 4자 이상 적어주세요.'); return; }
+
+  const btn1 = document.getElementById('btnRegister');
+  const btn2 = document.getElementById('btnLoad');
+  btn1.disabled = true; btn2.disabled = true;
+  toast(actionType === 'register' ? '계정 생성 중...' : '정보를 불러오는 중...');
+
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: actionType, nickname: name, password: pw })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success) {
+      // 로컬 스토리지에 인증 정보 저장
+      state.nickname = name;
+      state.password = pw;
+      localStorage.setItem('lumberjack_nickname', name);
+      localStorage.setItem('lumberjack_password', pw);
+      
+      if(actionType === 'load') {
+        state.level = data.data.level;
+        state.totalChop = data.data.totalChop;
+        state.gold = data.data.gold;
+        state.exp = 0; // 초기화
+        toast(`환영합니다! 데이터를 성공적으로 불러왔습니다.`);
+      } else {
+        toast(`계정이 성공적으로 생성되었습니다!`);
+      }
+      
+      document.getElementById('playerName').textContent = name;
+      document.getElementById('loginModal').style.display = 'none';
+      uiDirty = true;
+      render();
+      loadRanking();
+    } else {
+      toast('실패: ' + (data.error || '알 수 없는 오류'));
+    }
+  })
+  .catch(err => {
+    toast('서버 통신에 실패했습니다.');
+  })
+  .finally(() => {
+    btn1.disabled = false; btn2.disabled = false;
+  });
 }
 
-/* ============ 랭킹 서버 연동 ============ */
+/* ============ 서버 저장 & 랭킹 ============ */
 function saveRecordToServer() {
   if (isSaving) return;
   if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') {
-    toast('API_URL이 설정되지 않았습니다. 코드를 확인해주세요.'); return;
+    toast('API_URL을 설정해주세요.'); return;
   }
   isSaving = true;
-  toast('서버에 기록을 저장하는 중...');
+  toast('기록 저장 중...');
   
   const payload = {
+    action: 'save',
     nickname: state.nickname,
+    password: state.password,
     level: state.level,
     totalChop: state.totalChop,
     gold: state.gold
@@ -536,12 +571,10 @@ function saveRecordToServer() {
       toast('성공적으로 저장되었습니다!');
       loadRanking();
     } else {
-      console.error(data.error);
       toast('저장 실패: ' + (data.error || '알 수 없는 에러'));
     }
   })
   .catch(err => {
-    console.error(err);
     toast('서버 연결에 실패했습니다.');
   })
   .finally(() => {
@@ -551,7 +584,6 @@ function saveRecordToServer() {
 
 function loadRanking() {
   if (API_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') return;
-  
   const listEl = document.getElementById('rankList');
   listEl.innerHTML = '<li style="text-align:center; color:#888;">데이터를 불러오는 중...</li>';
   
@@ -578,7 +610,7 @@ function loadRanking() {
   });
 }
 
-/* ============ 유틸리티 ============ */
+/* ============ 게임 유틸리티 ============ */
 function pickTree(){ let r = Math.random()*TOTAL_W; for(const t of TREES){ r-=t.weight; if(r<=0) return t; } return TREES[0]; }
 function newSlotTree(){ const t = pickTree(); return {treeId:t.id, phase:'grow', t:0, hitsLeft:0}; }
 for(let i=0;i<6;i++) state.slots[i] = newSlotTree();
@@ -602,7 +634,7 @@ function closeQuiz() { document.getElementById('quizModal').style.display = 'non
 function checkQuiz() {
   const ans = parseInt(document.getElementById('quizAnswer').value, 10);
   if (ans === quizExpectedAns) {
-    state.spiritTimeLeft = 5; toast('✨ 정답! 5초간 산신령의 가호 발동!');
+    state.spiritTimeLeft = 10; toast('✨ 정답! 10초간 산신령의 가호 발동!');
     document.getElementById('mountainSpirit').classList.add('active');
   } else { toast('⚡ 오답입니다.'); }
   closeQuiz();
@@ -619,27 +651,24 @@ function answerFairy() {
   document.getElementById('fairyModal').style.display = 'none';
   setTimeout(() => {
     document.getElementById('fairy').classList.remove('active');
-    // 산신령 버프가 활성화되어 있지 않으면 산신령도 퇴장
     if (state.spiritTimeLeft <= 0) {
       document.getElementById('mountainSpirit').classList.remove('active');
     }
   }, 1500);
 
   if (Math.random() < 0.5) {
-    // 성공
     state.axeId = 'fairy_gold';
-    state.axeMaxDura = 20; // 20회 전용
+    state.axeMaxDura = 20; 
     state.axeDura = 20;
     toast('✨ 산신령이 만족하며 선녀의 금도끼를 줍니다! (속도 3배 / 20회 제한)');
     uiDirty = true;
     render();
   } else {
-    // 실패
     toast('⚡ 산신령이 괘씸하다며 아무것도 주지 않고 사라집니다...');
   }
 }
 
-/* ============ 로직 ============ */
+/* ============ 게임 로직 ============ */
 function addExp(n){
   state.exp += n;
   while(state.level<50 && state.exp>=expNeeded(state.level)){
@@ -656,7 +685,6 @@ function chopHit(slotIdx){
   if(slot.hitsLeft===undefined || slot.hitsLeft<=0) slot.hitsLeft = hitsNeeded;
   slot.hitsLeft -= 1; 
 
-  // 이벤트 금도끼는 한 번 휘두를 때마다 내구도 정확히 1 감소 (20회 제한)
   if(axe.id === 'fairy_gold') {
     state.axeDura = Math.max(0, state.axeDura - 1);
   } else {
@@ -792,7 +820,6 @@ function renderForest(){
 }
 
 function renderAxePanel(){
-  // 숨겨진(hidden) 이벤트용 도끼는 상점에 출력하지 않음
   document.getElementById('axePanel').innerHTML = `<div class="shop-sub-label">🪓 도끼 상점</div>` + AXES.filter(a=>!a.hidden).map(a=>`
     <div class="row-item"><div class="ic">🪓</div><div class="nm">${a.name}<span class="sm">속도 ${a.mult.toFixed(1)}×</span></div>
     <div class="ct">${a.cost}Ə</div><button class="buy-btn" ${(state.gold<a.cost)?'disabled':''} onclick="buyAxe('${a.id}')">${state.axeId===a.id?'장착중':'구매'}</button></div>`).join('');
@@ -836,7 +863,6 @@ function tick(now){
     }
   }
 
-  // 선녀 이벤트 타이머 (1분마다 5% 확률)
   fairyEventTimer += dt;
   if(fairyEventTimer >= 60) {
     fairyEventTimer = 0;
